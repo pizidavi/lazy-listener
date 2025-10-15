@@ -1,0 +1,6 @@
+{
+  "messages": {
+    "welcome": "*Ciao!* 👋\nSono Lazy Listener, un bot che trascrive i messaggi vocali.\n\nInviami qualsiasi messaggio vocale e io lo convertirò in testo per te.\nSupporto più lingue e sono disponibile sia nelle chat private che nei gruppi!",
+    "help": "Ecco alcuni comandi che puoi usare:\n\n/start - Avvia il bot e visualizza il messaggio di benvenuto\n/help - Mostra questo messaggio di aiuto\n\nInviami un messaggio vocale per iniziare!\n\nIl mio codice è open source su GitHub: https://github.com/pizidavi/lazy-listener"
+  }
+}

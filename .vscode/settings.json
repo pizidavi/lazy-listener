@@ -1,0 +1,27 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "eslint.enable": true,
+  "files.readonlyInclude": {
+    "bun.lock": true,
+    "worker-configuration.d.ts": true
+  },
+  "files.watcherExclude": {
+    "bun.lock": true,
+    "worker-configuration.d.ts": true
+  },
+  "prettier.enable": true,
+  "search.exclude": {
+    "bun.lock": true,
+    "worker-configuration.d.ts": true
+  },
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.preferTypeOnlyAutoImports": true,
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
