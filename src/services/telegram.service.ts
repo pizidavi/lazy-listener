@@ -1,4 +1,7 @@
+import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/d1';
 import type { Context } from 'hono';
+import { transcriptionStats } from '../db/schema';
 import { AiClient } from '../libs/ai';
 import { TelegramClient } from '../libs/telegram';
 import { t } from '../locale';
@@ -14,6 +17,7 @@ import type { Env } from '../types/type';
 export const telegramService = (context: Context<Env>) => {
   const { logger } = context.var;
 
+  const db = drizzle(context.env.DB);
   const aiClient = new AiClient(context.env.AI);
   const telegramClient = new TelegramClient(context.env.TELEGRAM_BOT_TOKEN);
 
@@ -24,7 +28,7 @@ export const telegramService = (context: Context<Env>) => {
     const language = message.from?.language_code ?? 'en';
     const text = message.text.trim();
 
-    // Only respond to commands from admin user in groups
+    // In group chats, only respond to commands from admin users
     if (chatType !== 'private') {
       if (fromId === undefined)
         throw new Exception(HTTP_STATUS.FORBIDDEN, 'Message from unknown user in group');
@@ -43,6 +47,25 @@ export const telegramService = (context: Context<Env>) => {
       await telegramClient.sendMessage(chatId, t(language, 'messages:help'), {
         link_preview_options: { is_disabled: true },
       });
+    }
+    // Stats command
+    else if (text.startsWith('/stats')) {
+      const today = new Date().toISOString().split('T')[0];
+
+      const totalResult = await db
+        .select({ total: sql<number>`sum(${transcriptionStats.transcriptionCounter})` })
+        .from(transcriptionStats);
+
+      const todayResult = await db
+        .select({ count: transcriptionStats.transcriptionCounter })
+        .from(transcriptionStats)
+        .where(sql`${transcriptionStats.date} = ${today}`);
+
+      const totalTranscriptions = totalResult[0]?.total ?? 0;
+      const todayTranscriptions = todayResult[0]?.count ?? 0;
+
+      const message = t(language, 'messages:stats', { totalTranscriptions, todayTranscriptions });
+      await telegramClient.sendMessage(chatId, message);
     }
   };
 
@@ -86,6 +109,19 @@ export const telegramService = (context: Context<Env>) => {
       reply_to_message_id: messageId,
       disable_notification: true,
     });
+
+    // Increment transcription counter
+    const today = new Date().toISOString().split('T')[0];
+    await db
+      .insert(transcriptionStats)
+      .values({ date: today, transcriptionCounter: 1 })
+      .onConflictDoUpdate({
+        target: transcriptionStats.date,
+        set: { transcriptionCounter: sql`${transcriptionStats.transcriptionCounter} + 1` },
+      })
+      .catch((e: unknown) => {
+        logger.error('Failed to increment stats', { error: e });
+      });
   };
 
   return {
