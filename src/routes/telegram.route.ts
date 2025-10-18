@@ -13,9 +13,14 @@ const routes = createRoute('telegram-routes')
     protectTelegramRoute(),
     zValidator('json', telegramUpdateSchema),
     async (c): Promise<Response> => {
-      const { telegram } = c.var;
+      const { logger, telegram } = c.var;
 
       const update = c.req.valid('json');
+
+      const chatId = update.message?.chat.id;
+      const fromId = update.message?.from?.id;
+      if (chatId !== undefined)
+        logger.assign({ chatId, fromId: fromId !== chatId ? fromId : undefined });
 
       if (update.message) {
         const message = update.message;
@@ -27,7 +32,11 @@ const routes = createRoute('telegram-routes')
         // Voice message
         else if ('voice' in message || 'audio' in message) {
           await telegram.handleAudioMessage(message);
+        } else {
+          logger.info('Unsupported message type received', { message });
         }
+      } else {
+        logger.info('Unsupported update type received', { update });
       }
 
       return c.newResponse(null, HTTP_STATUS.OK);

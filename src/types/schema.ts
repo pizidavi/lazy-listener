@@ -4,6 +4,7 @@ export const envSchema = z.object({
   ENV: z.enum(['development', 'preview', 'production']).default('production'),
   TELEGRAM_BOT_TOKEN: z.string().min(1),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(12),
+  MAX_AUDIO_DURATION_SECONDS: z.coerce.number().min(0).default(600),
 });
 
 export const telegramMessageBaseUpdateSchema = z.object({

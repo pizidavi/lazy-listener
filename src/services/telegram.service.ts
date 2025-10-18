@@ -41,12 +41,14 @@ export const telegramService = (context: Context<Env>) => {
     // Start command
     if (text.startsWith('/start')) {
       await telegramClient.sendMessage(chatId, t(language, 'messages:welcome'));
+      logger.info('Handled /start command');
     }
     // Help command
     else if (text.startsWith('/help')) {
       await telegramClient.sendMessage(chatId, t(language, 'messages:help'), {
         link_preview_options: { is_disabled: true },
       });
+      logger.info('Handled /help command');
     }
     // Stats command
     else if (text.startsWith('/stats')) {
@@ -66,6 +68,7 @@ export const telegramService = (context: Context<Env>) => {
 
       const message = t(language, 'messages:stats', { totalTranscriptions, todayTranscriptions });
       await telegramClient.sendMessage(chatId, message);
+      logger.info('Handled /stats command');
     }
   };
 
@@ -73,8 +76,38 @@ export const telegramService = (context: Context<Env>) => {
     message: TelegramMessageVoiceUpdate | TelegramMessageAudioUpdate,
   ) => {
     const chatId = message.chat.id;
+    const chatType = message.chat.type;
     const messageId = message.message_id;
     const fileId = 'voice' in message ? message.voice.file_id : message.audio.file_id;
+    const fileDuration = 'voice' in message ? message.voice.duration : message.audio.duration;
+
+    // Rate limiting based on user ID or chat ID
+    const { success } = await context.env.AUDIO_LIMIT.limit({
+      key: (message.from?.id ?? chatId).toString(),
+    });
+    if (!success) {
+      logger.info('Rate limited', { limiter: 'audio' });
+      await telegramClient.setMessageReaction(chatId, messageId, '👾').catch(() => {
+        logger.error('Failed to send message reaction');
+      });
+      throw new Exception(HTTP_STATUS.TOO_MANY_REQUESTS, 'Rate limit exceeded');
+    }
+
+    // Reject if audio message is sent in non-private chat
+    if ('audio' in message && chatType !== 'private')
+      throw new Exception(HTTP_STATUS.CONFLICT, 'Audio messages are only allowed in private chats');
+
+    // Reject if audio is too long
+    if (fileDuration > context.env.MAX_AUDIO_DURATION_SECONDS) {
+      await telegramClient.setMessageReaction(chatId, messageId, '🤯').catch(() => {
+        logger.error('Failed to send message reaction');
+      });
+      throw new Exception(HTTP_STATUS.PAYLOAD_TOO_LARGE, 'Audio duration exceeds maximum limit');
+    }
+
+    logger.debug(
+      `Received ${'voice' in message ? 'voice' : 'audio'} message. Starting processing...`,
+    );
 
     // Notify user that processing has started
     await telegramClient.sendChatAction(chatId, 'typing').catch(() => {
@@ -100,7 +133,9 @@ export const telegramService = (context: Context<Env>) => {
         return refinedText;
       })
       .catch(async e => {
-        await telegramClient.setMessageReaction(chatId, messageId, '🤨');
+        await telegramClient.setMessageReaction(chatId, messageId, '🤨').catch(() => {
+          logger.error('Failed to send message reaction');
+        });
         throw e;
       });
 
@@ -122,6 +157,8 @@ export const telegramService = (context: Context<Env>) => {
       .catch((e: unknown) => {
         logger.error('Failed to increment stats', { error: e });
       });
+
+    logger.info('Successfully processed audio message');
   };
 
   return {
