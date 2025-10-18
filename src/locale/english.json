@@ -1,7 +1,7 @@
 {
   "messages": {
     "welcome": "*Hello!* 👋\nI'm Lazy Listener, a voice message transcriber bot.\n\nSimply send me any voice message and I'll convert it to text for you.\nI support multiple languages and work in both private chats and groups!",
-    "help": "Here are some commands you can use:\n\n/start - Start the bot and see the welcome message\n/help - Show this help message\n\nJust send me a voice message to get started!\n\nMy code is open source on GitHub: https://github.com/pizidavi/lazy-listener",
+    "help": "Just send me a voice message to get started!\n\nHere are some commands you can use:\n- /start - Start the bot and see the welcome message\n- /help - Show this help message\n\nMessage reaction legend:\n- 👾 Rate limit exceeded, try again later\n- 🤯 Audio duration exceeds maximum limit\n- 🤨 Failed to transcribe the audio\n\nThe code is open source on GitHub: https://github.com/pizidavi/lazy-listener",
     "stats": "📊 Bot Stats\n\nTotal Transcriptions: {{totalTranscriptions}}\nToday's Transcriptions: {{todayTranscriptions}}"
   }
 }
