@@ -1,6 +1,6 @@
 //@ts-expect-error missing types
 import { Buffer } from 'node:buffer';
-import { buildTextPrompt } from '../../utils/prompt';
+import { buildSummaryPrompt, buildTextPrompt } from '../../utils/prompt';
 
 export class AiClient {
   private readonly ai: Ai;
@@ -23,6 +23,20 @@ export class AiClient {
   async refineText(rawText: string): Promise<string> {
     const messages = [
       { role: 'system', content: buildTextPrompt() },
+      { role: 'user', content: rawText },
+    ];
+
+    const response = await this.ai.run('@cf/google/gemma-3-12b-it', {
+      messages,
+      max_tokens: rawText.length + Math.ceil(rawText.length * 0.1),
+    });
+
+    return response.response.trim();
+  }
+
+  async summarizeText(rawText: string): Promise<string> {
+    const messages = [
+      { role: 'system', content: buildSummaryPrompt() },
       { role: 'user', content: rawText },
     ];
 

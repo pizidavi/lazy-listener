@@ -78,6 +78,7 @@ export const telegramService = (context: Context<Env>) => {
     const chatId = message.chat.id;
     const chatType = message.chat.type;
     const messageId = message.message_id;
+    const language = message.from?.language_code ?? 'en';
     const fileId = 'voice' in message ? message.voice.file_id : message.audio.file_id;
     const fileDuration = 'voice' in message ? message.voice.duration : message.audio.duration;
 
@@ -127,7 +128,17 @@ export const telegramService = (context: Context<Env>) => {
         logger.debug('Transcription done', { textLength: rawTranscription.length });
 
         // Refine transcription
-        const refinedText = await aiClient.refineText(rawTranscription);
+        const refinedText = await (async () => {
+          if (rawTranscription.length <= 2000) {
+            return await aiClient.refineText(rawTranscription);
+          } else {
+            logger.info('Transcription too long, summarizing instead of refining');
+
+            // For long transcriptions, summarize instead of refining
+            const text = await aiClient.summarizeText(rawTranscription);
+            return `${text}\n\n_${t(language, 'messages:message_too_long')}_`;
+          }
+        })();
         if (refinedText.length < 5 || refinedText === 'No content')
           throw new Exception(HTTP_STATUS.FAILED_DEPENDENCY, 'Failed to refine transcription');
 

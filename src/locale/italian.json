@@ -2,6 +2,7 @@
   "messages": {
     "welcome": "*Ciao!* 👋\nSono Lazy Listener, un bot che trascrive i messaggi vocali.\n\nInviami qualsiasi messaggio vocale e io lo convertirò in testo per te.\nSupporto più lingue e sono disponibile sia nelle chat private che nei gruppi!",
     "help": "Per iniziare, basta inviarmi un messaggio vocale!\n\nComandi disponibili:\n- /start - Avvia il bot e visualizza il messaggio di benvenuto\n- /help - Visualizza questo messaggio di aiuto\n- /stats - Mostra le statistiche del bot\n\nLegenda delle reazioni ai messaggi:\n- 👾 Rate Limit superato, riprova più tardi\n- 🤯 La durata dell'audio supera il limite massimo\n- 🤨 Trascrizione dell'audio non riuscita\n\nIl codice è open source su GitHub: https://github.com/pizidavi/lazy-listener",
-    "stats": "📊 Statistiche Bot\n\nTrascrizioni totali: {{totalTranscriptions}}\nTrascrizioni di oggi: {{todayTranscriptions}}"
+    "stats": "📊 Statistiche Bot\n\nTrascrizioni totali: {{totalTranscriptions}}\nTrascrizioni di oggi: {{todayTranscriptions}}",
+    "message_too_long": "Il messaggio è troppo lungo. Viene fornito un riassunto."
   }
 }
