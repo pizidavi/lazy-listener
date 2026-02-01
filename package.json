@@ -10,6 +10,8 @@
     "cf:typegen": "wrangler types --env-interface CloudflareBindings",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply DB",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
     "lint": "eslint src --report-unused-disable-directives --no-error-on-unmatched-pattern"
   },
   "dependencies": {
