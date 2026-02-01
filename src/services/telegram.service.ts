@@ -124,12 +124,14 @@ export const telegramService = (context: Context<Env>) => {
         const rawTranscription = await aiClient.transcribeAudio(fileResponse);
         if (rawTranscription.length < 5)
           throw new Exception(HTTP_STATUS.FAILED_DEPENDENCY, 'Failed to transcribe audio');
+        logger.debug('Transcription done', { textLength: rawTranscription.length });
 
         // Refine transcription
         const refinedText = await aiClient.refineText(rawTranscription);
         if (refinedText.length < 5 || refinedText === 'No content')
           throw new Exception(HTTP_STATUS.FAILED_DEPENDENCY, 'Failed to refine transcription');
 
+        logger.debug('Refinement done', { textLength: refinedText.length });
         return refinedText;
       })
       .catch(async e => {

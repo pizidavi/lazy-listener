@@ -28,6 +28,7 @@ export class AiClient {
 
     const response = await this.ai.run('@cf/google/gemma-3-12b-it', {
       messages,
+      max_tokens: rawText.length + Math.ceil(rawText.length * 0.1),
     });
 
     return response.response.trim();

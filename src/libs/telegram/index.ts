@@ -1,6 +1,7 @@
 import type { TelegramChatMember, TelegramFile, TelegramResponse } from './types';
 
 const TELEGRAM_API = 'https://api.telegram.org';
+const MAX_MESSAGE_LENGTH = 2048;
 
 export class TelegramClient {
   private readonly token: string;
@@ -47,21 +48,59 @@ export class TelegramClient {
       parse_mode?: 'Markdown' | 'HTML';
     },
   ): Promise<void> {
-    const response = await fetch(`${TELEGRAM_API}/bot${this.token}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'Markdown',
-        ...options,
-      }),
-    });
+    // Split text into chunks
+    const chunks: string[] = [];
+    let remainingText = text;
 
-    if (!response.ok) {
-      throw new Error(`Failed to send message: ${response.statusText}`);
+    while (remainingText.length > 0) {
+      if (remainingText.length <= MAX_MESSAGE_LENGTH) {
+        chunks.push(remainingText);
+        break;
+      }
+
+      // Find the best split point (try to split at word boundary)
+      let splitIndex = MAX_MESSAGE_LENGTH;
+      const lastSpace = remainingText.lastIndexOf(' ', MAX_MESSAGE_LENGTH);
+      const lastNewline = remainingText.lastIndexOf('\n', MAX_MESSAGE_LENGTH);
+
+      if (lastNewline > 0) {
+        splitIndex = lastNewline;
+      } else if (lastSpace > 0) {
+        splitIndex = lastSpace;
+      }
+
+      chunks.push(remainingText.slice(0, splitIndex).trim());
+      remainingText = remainingText.slice(splitIndex).trim();
+    }
+
+    // Send each chunk
+    for (let i = 0; i < chunks.length; i++) {
+      const isFirstMessage = i === 0;
+      const response = await fetch(`${TELEGRAM_API}/bot${this.token}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: chunks[i],
+          parse_mode: 'Markdown',
+          ...(isFirstMessage
+            ? options
+            : {
+                ...options,
+                reply_to_message_id: undefined, // Only reply to the original message with the first chunk
+              }),
+        }),
+      });
+
+      if (!response.ok) {
+        const cause = await response.text().catch(() => null);
+        throw new Error(
+          `Failed to send message chunk ${i + 1}/${chunks.length}: ${response.statusText}`,
+          { cause },
+        );
+      }
     }
   }
 
